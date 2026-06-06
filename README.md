@@ -1,5 +1,9 @@
 # animation_gif_engine
 
+<p align="center">
+  <img src="docs/belo_thinking.gif" alt="belo thinking animation: gravity draw-in, snake-taut line, bouncing thinking dots" width="560">
+</p>
+
 A small **project-based engine** that turns a wordmark + a config file into animated GIFs.
 
 Each animation is a **project**: a folder with one editable document (`project.json`) plus
