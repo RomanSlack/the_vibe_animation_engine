@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>belo thinking — tuning</title>
+<style>
+  :root { --pan: #1b1b22; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 system-ui, sans-serif; color: #e7e7ee; background: #0d0d12; }
+  .wrap { display: flex; gap: 18px; padding: 18px; flex-wrap: wrap; }
+  .stage { flex: 1 1 520px; min-width: 320px; }
+  canvas { width: 100%; height: auto; border-radius: 10px; display: block; }
+  .bgsw { display: flex; gap: 8px; margin: 10px 0; }
+  .bgsw button { flex: 1; padding: 8px; border: 1px solid #333; background: #1b1b22; color: #ddd; border-radius: 6px; cursor: pointer; }
+  .bgsw button.on { outline: 2px solid #6ea8ff; }
+  .panel { flex: 0 0 320px; background: var(--pan); border-radius: 10px; padding: 14px; }
+  .row { display: grid; grid-template-columns: 130px 1fr 52px; align-items: center; gap: 8px; margin: 7px 0; }
+  .row label { color: #aab; font-size: 12px; }
+  .row output { font-variant-numeric: tabular-nums; text-align: right; color: #cfe; }
+  input[type=range] { width: 100%; }
+  h3 { margin: 14px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #889; }
+  .transport { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+  .transport button { padding: 7px 12px; border-radius: 6px; border: 1px solid #444; background: #262631; color: #eee; cursor: pointer; }
+  .swatches { display: flex; gap: 6px; }
+  .swatches button { width: 30px; height: 24px; border-radius: 5px; border: 1px solid #555; cursor: pointer; }
+  .hint { color:#778; font-size:11px; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <canvas id="cv"></canvas>
+    <div class="bgsw" id="bgsw">
+      <button data-bg="checker" class="on">checker</button>
+      <button data-bg="#ffffff">white</button>
+      <button data-bg="#0d1117">dark UI</button>
+      <button data-bg="#f5f0e8">light UI</button>
+    </div>
+    <div class="transport">
+      <button id="play">⏸ pause</button>
+      <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" style="flex:1" />
+      <span id="tlabel" style="width:80px;text-align:right">0.00s</span>
+    </div>
+    <div class="hint">Loops the full sequence (write-on → line → dots → pulse). Drag to scrub.</div>
+  </div>
+
+  <div class="panel" id="panel">
+    <h3>Color</h3>
+    <div class="row"><label>fill</label><input id="color" type="color" value="#ffffff"><output id="color_o"></output></div>
+    <div class="swatches" style="margin:4px 0 0 138px">
+      <button title="black"   style="background:#000000" data-c="#000000"></button>
+      <button title="dark theme off-white" style="background:#F0F6FC" data-c="#F0F6FC"></button>
+      <button title="light theme plum"     style="background:#5A1E5C" data-c="#5A1E5C"></button>
+    </div>
+
+    <h3>Timing (s)</h3>
+    <!-- sliders injected here -->
+    <div id="sliders"></div>
+  </div>
+</div>
+
+<script src="src/belo_anim.js"></script>
+<script>
+const SPECS = [
+  ['dur.writeon', 'write-on', 0.2, 3, 0.01],
+  ['dur.hold1',   'hold word', 0, 2, 0.01],
+  ['dur.morph',   'morph→line', 0.2, 3, 0.01],
+  ['dur.hold2',   'hold line', 0, 1.5, 0.01],
+  ['dur.split',   'split→dots', 0.2, 2.5, 0.01],
+  ['dur.pulse',   'pulse loop', 0.4, 3, 0.01],
+  ['__h:Draw-in (gravity)'],
+  ['revealWindow', 'wave width', 0.03, 0.5, 0.01],
+  ['dropHeight',   'drop height', 0, 140, 1],
+  ['__h:Line / dots'],
+  ['lineR',       'line thick', 4, 40, 0.5],
+  ['dotR',        'dot radius', 8, 48, 0.5],
+  ['dotGap',      'dot gap', 30, 180, 1],
+  ['morphBack',   'taut snap', 0, 4, 0.05],
+  ['splitBack',   'split snap', 0, 4, 0.05],
+  ['__h:Pulse'],
+  ['bounceAmp',   'bounce', 0, 60, 1],
+  ['dotPulse',    'dot pulse', 0, 0.5, 0.01],
+  ['bounceStagger','stagger', 0, 0.5, 0.01],
+];
+
+let M, P = BeloAnim.defaults();
+let playing = true, T = 0, last = 0, bg = 'checker';
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+
+function get(obj, pathStr) { return pathStr.split('.').reduce((o, k) => o[k], obj); }
+function set(obj, pathStr, v) { const ks = pathStr.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], obj)[last] = v; }
+
+function buildPanel() {
+  const host = document.getElementById('sliders');
+  for (const s of SPECS) {
+    if (s[0].startsWith('__h:')) { const h = document.createElement('h3'); h.textContent = s[0].slice(4); host.appendChild(h); continue; }
+    const [key, lab, mn, mx, st] = s;
+    const row = document.createElement('div'); row.className = 'row';
+    const v = get(P, key);
+    row.innerHTML = `<label>${lab}</label><input type="range" min="${mn}" max="${mx}" step="${st}" value="${v}"><output>${(+v).toFixed(2)}</output>`;
+    const inp = row.querySelector('input'), out = row.querySelector('output');
+    inp.addEventListener('input', () => { set(P, key, +inp.value); out.textContent = (+inp.value).toFixed(2); });
+    host.appendChild(row);
+  }
+}
+
+function drawChecker() {
+  const s = 16; ctx.save();
+  for (let y = 0; y < cv.height; y += s) for (let x = 0; x < cv.width; x += s) {
+    ctx.fillStyle = ((x / s + y / s) & 1) ? '#2a2a33' : '#20202a';
+    ctx.fillRect(x, y, s, s);
+  }
+  ctx.restore();
+}
+
+function frame(ts) {
+  if (!last) last = ts;
+  const dt = (ts - last) / 1000; last = ts;
+  const tl = BeloAnim.timeline(P);
+  const total = tl.introEnd + P.dur.pulse;
+  if (playing) { T = (T + dt) % total; }
+  // background layer
+  if (bg === 'checker') drawChecker();
+  else { ctx.fillStyle = bg; ctx.fillRect(0, 0, cv.width, cv.height); }
+  // animation (transparent draw on top)
+  const Pn = Object.assign({}, P, { bg: 'transparent' });
+  BeloAnim.draw(ctx, M, Pn, T, { W: cv.width, H: cv.height, scale: cv.width / M.w });
+  document.getElementById('scrub').value = T / total;
+  document.getElementById('tlabel').textContent = T.toFixed(2) + 's';
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('color').addEventListener('input', e => { P.color = e.target.value; });
+document.querySelectorAll('.swatches button').forEach(b =>
+  b.addEventListener('click', () => { P.color = b.dataset.c; document.getElementById('color').value = b.dataset.c; }));
+document.getElementById('bgsw').addEventListener('click', e => {
+  if (e.target.dataset.bg) { bg = e.target.dataset.bg; document.querySelectorAll('#bgsw button').forEach(x => x.classList.toggle('on', x === e.target)); }
+});
+document.getElementById('play').addEventListener('click', e => { playing = !playing; e.target.textContent = playing ? '⏸ pause' : '▶ play'; });
+document.getElementById('scrub').addEventListener('input', e => {
+  playing = false; document.getElementById('play').textContent = '▶ play';
+  const tl = BeloAnim.timeline(P); T = (+e.target.value) * (tl.introEnd + P.dur.pulse);
+});
+
+fetch('out/medial.json').then(r => r.json()).then(j => {
+  M = BeloAnim.prepare(j);
+  cv.width = M.w; cv.height = M.h;
+  buildPanel();
+  requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>

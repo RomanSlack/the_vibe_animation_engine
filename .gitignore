@@ -14,5 +14,5 @@ __pycache__/
 projects/*/build/skel.npy
 projects/*/build/cache.json
 
-# Original prototype, kept locally as a backup but not part of the published repo
-experiments/
+# experiments/ = original standalone prototype, included as a reference example.
+# (its node_modules + trial .otf are already excluded by the rules above)
