@@ -1,0 +1,17 @@
+{
+  "name": "belo_thinking",
+  "version": 2,
+  "builtAt": "2026-06-06T19:17:11.353Z",
+  "stages": {
+    "model": "976ae0b997885239"
+  },
+  "outputs": [
+    {
+      "theme": "white",
+      "clip": "full",
+      "file": "out/belo_thinking_white_full.gif",
+      "frames": 205,
+      "bytes": 565707
+    }
+  ]
+}

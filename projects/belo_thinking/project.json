@@ -1,0 +1,45 @@
+{
+  "name": "belo_thinking",
+  "version": 2,
+  "description": "belo wordmark 'AI is thinking' indicator: gravity draw-in -> snake-taut line -> bouncing thinking dots",
+  "source": {
+    "word": "belo",
+    "font": "assets/Bumbbled.otf",
+    "fontSize": 380,
+    "pad": 60,
+    "discSpacing": 7
+  },
+  "timeline": {
+    "writeon": 1.55,
+    "hold1": 0.35,
+    "morph": 0.6,
+    "hold2": 0.18,
+    "split": 0.85,
+    "pulse": 1.1
+  },
+  "motion": {
+    "revealWindow": 0.12,
+    "dropHeight": 44,
+    "lineR": 16,
+    "lineSpan": 0.78,
+    "dotR": 36,
+    "dotGap": 100,
+    "morphBack": 1.6,
+    "splitBack": 2.1,
+    "bounceAmp": 42,
+    "dotPulse": 0.14,
+    "bounceStagger": 0.16
+  },
+  "render": {
+    "fps": 30,
+    "width": 600,
+    "supersample": 2,
+    "background": "transparent",
+    "themes": {
+      "white": "#FFFFFF"
+    },
+    "clips": [
+      "full"
+    ]
+  }
+}

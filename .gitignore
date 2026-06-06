@@ -1,0 +1,18 @@
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Fonts are commonly licensed / trial — keep them OUT of git by default.
+# Renders still work without the font: the build falls back to the committed
+# build/model.json. Remove these lines only if your font license permits.
+*.otf
+*.ttf
+
+# Per-project build artifacts: ignore the heavy / machine-specific ones, but
+# KEEP build/model.json + build/glyph.json so a project renders without the font.
+projects/*/build/skel.npy
+projects/*/build/cache.json
+
+# Original prototype, kept locally as a backup but not part of the published repo
+experiments/

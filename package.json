@@ -1,0 +1,20 @@
+{
+  "name": "animation_gif_engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Project-based engine that turns a wordmark + config into animated GIFs.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node engine/engine.js build",
+    "clean": "node engine/engine.js clean",
+    "belo": "node engine/engine.js build projects/belo_thinking",
+    "tune": "python3 -m http.server 8000",
+    "view": "python3 viewer/app.py"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.0"
+  }
+}
